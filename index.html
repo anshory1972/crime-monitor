@@ -297,37 +297,32 @@
         </div>
       </div>
 
-      <div class="row g-3">
-        <div class="col-lg-6">
-          <div class="card h-100">
-            <div class="card-body">
-              <div class="card-title">Top 25 Districts — Event Count (24 months)</div>
-              <div style="height:580px"><canvas id="chartTop25Count"></canvas></div>
-              <div class="metric-note">
-                <div class="mn-title">&#8505; Event count</div>
-                <ul>
-                  <li>Number of <strong>distinct GDELT news events</strong> (after deduplication) coded as protests, violence, or coercion in that district over 24 months.</li>
-                  <li>Sourced from <strong>media reports, not police records</strong>. One incident covered by 100 outlets still counts as 1 event here.</li>
-                  <li>High count may reflect high journalist density, not high crime.</li>
-                </ul>
-              </div>
-            </div>
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title">Top 10 Districts — Event Count (24 months)</div>
+          <div style="height:340px"><canvas id="chartTop25Count"></canvas></div>
+          <div class="metric-note">
+            <div class="mn-title">&#8505; Event count</div>
+            <ul>
+              <li>Number of <strong>distinct GDELT news events</strong> (after deduplication) coded as protests, violence, or coercion in that district over 24 months.</li>
+              <li>Sourced from <strong>media reports, not police records</strong>. One incident covered by 100 outlets still counts as 1 event here.</li>
+              <li>High count may reflect high journalist density, not high crime.</li>
+            </ul>
           </div>
         </div>
-        <div class="col-lg-6">
-          <div class="card h-100">
-            <div class="card-body">
-              <div class="card-title">Top 25 Districts — Total Intensity (24 months)</div>
-              <div style="height:580px"><canvas id="chartTop25Intens"></canvas></div>
-              <div class="metric-note">
-                <div class="mn-title">&#8505; Total intensity</div>
-                <ul>
-                  <li><strong>Intensity = &sum;(NumMentions &times; |GoldsteinScale|)</strong> across all events. A single event covered by 100 sources scores 10&times; higher than one covered by 10.</li>
-                  <li><strong>Not normalised</strong> by population or district area. Rankings reflect media prominence, not crime incidence per capita.</li>
-                  <li>Compare this chart with Event Count on the left: a district ranked higher here than there had <em>fewer but more heavily covered</em> incidents.</li>
-                </ul>
-              </div>
-            </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title">Top 10 Districts — Total Intensity (24 months)</div>
+          <div style="height:340px"><canvas id="chartTop25Intens"></canvas></div>
+          <div class="metric-note">
+            <div class="mn-title">&#8505; Total intensity</div>
+            <ul>
+              <li><strong>Intensity = &sum;(NumMentions &times; |GoldsteinScale|)</strong> across all events. A single event covered by 100 sources scores 10&times; higher than one covered by 10.</li>
+              <li><strong>Not normalised</strong> by population or district area. Rankings reflect media prominence, not crime incidence per capita.</li>
+              <li>A district ranking higher here than in Event Count had <em>fewer but more heavily covered</em> incidents.</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -723,8 +718,8 @@ Promise.all(FILES.map(f => fetch(f).then(r => r.json())))
     populateKpis(meta);
     renderNational(national, weeks, meta.grandMean);
     renderProvince(weeks, provDs);
-    renderTop25Bar('chartTop25Count',  top25Count,  'event_count',     'events');
-    renderTop25Bar('chartTop25Intens', top25Intens, 'total_intensity', 'intensity');
+    renderTop25Bar('chartTop25Count',  top25Count.slice(0,10),  'event_count',     'events');
+    renderTop25Bar('chartTop25Intens', top25Intens.slice(0,10), 'total_intensity', 'intensity');
     renderSmallMultiples('gridDistCount',  distTrendCount,  weeks, 'Events');
     renderSmallMultiples('gridDistIntens', distTrendIntens, weeks, 'Intensity');
     setupMap(mapLookup, meta);
