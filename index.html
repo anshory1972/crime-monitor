@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DCMB | DEN Media-based Crime Monitoring Dashboard</title>
+<title>DCMB | DEN Media-based Conflict and Violence Monitoring Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
@@ -218,7 +218,7 @@
     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Lambang_Dewan_Ekonomi_Nasional_Republik_Indonesia_%282025%29.svg/250px-Lambang_Dewan_Ekonomi_Nasional_Republik_Indonesia_%282025%29.svg.png"
          alt="DEN Logo" style="height:38px;width:auto;flex-shrink:0;">
     <div>
-      <div class="brand">DCMB | DEN Media-based Crime Monitoring Dashboard</div>
+      <div class="brand">DCMB | DEN Media-based Conflict and Violence Monitoring Dashboard</div>
       <div class="sub">Dewan Ekonomi Nasional &middot; Republik Indonesia</div>
     </div>
   </div>
@@ -267,7 +267,7 @@
 
       <div class="card">
         <div class="card-body">
-          <div class="card-title">Indonesia National Crime Intensity Trend (GDELT-based, 2024&ndash;2026)</div>
+          <div class="card-title">Indonesia National Conflict &amp; Violence Intensity Trend (GDELT-based, 2024&ndash;2026)</div>
           <div style="height:260px"><canvas id="chartNational"></canvas></div>
           <div class="metric-note">
             <div class="mn-title">&#8505; How to read this chart</div>
@@ -460,7 +460,7 @@
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
             <div>
-              <div class="card-title mb-0">District Crime Intensity Map</div>
+              <div class="card-title mb-0">District Conflict &amp; Violence Intensity Map</div>
               <div class="period-label mt-1" id="periodLabel"></div>
             </div>
             <div class="btn-group btn-group-sm" role="group">
@@ -494,7 +494,7 @@
         <div class="card-body">
 
           <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-            <div class="card-title mb-0">All Districts — Crime Summary</div>
+            <div class="card-title mb-0">All Districts — Conflict &amp; Violence Summary</div>
             <div class="d-flex gap-2 align-items-center">
               <input type="text" id="searchBox" class="form-control form-control-sm"
                      placeholder="Search district or province&hellip;">
@@ -542,7 +542,7 @@
         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Lambang_Dewan_Ekonomi_Nasional_Republik_Indonesia_%282025%29.svg/250px-Lambang_Dewan_Ekonomi_Nasional_Republik_Indonesia_%282025%29.svg.png"
              alt="DEN Logo" style="height:80px;width:auto;flex-shrink:0;">
         <div>
-          <div class="title">DEN Media-based Crime Monitoring Dashboard</div>
+          <div class="title">DEN Media-based Conflict and Violence Monitoring Dashboard</div>
           <div class="divider"></div>
           <div class="org">Dewan Ekonomi Nasional &mdash; Republik Indonesia</div>
           <div class="meta">Economic Intelligence Unit &middot; Version 1.0 &middot; Data: GDELT v2 via Google BigQuery</div>
@@ -559,13 +559,13 @@
               <p>
                 Economic and financial distress are well-established drivers of crime. When households face
                 sustained income shocks, rising unemployment, or acute cost-of-living pressures, the incidence
-                of property crime, violent crime, and social unrest tends to rise. This relationship has been
+                of property crime, violent conflict, and social unrest tends to rise. This relationship has been
                 documented across both developed and developing economies and operates through multiple channels:
                 reduced legitimate earning opportunities, breakdown of community cohesion, and heightened
                 desperation among vulnerable populations.
               </p>
               <p>
-                Conversely, a measurable and sustained increase in crime &mdash; particularly in regions with
+                Conversely, a measurable and sustained increase in conflict and social violence &mdash; particularly in regions with
                 limited safety nets &mdash; can serve as a leading or coincident indicator that a population
                 is under serious financial stress, even before that distress is captured by lagging official
                 statistics such as poverty rates or household consumption surveys.
@@ -573,14 +573,14 @@
               <p>
                 The <strong>Dewan Ekonomi Nasional (DEN)</strong>, as the National Economic Council of Indonesia,
                 advises the President on strategic economic policy and is mandated to monitor economic conditions
-                and welfare across the archipelago. Crime trend monitoring falls squarely within that mandate:
+                and welfare across the archipelago. Conflict and violence trend monitoring falls squarely within that mandate:
                 it provides DEN analysts with a timely, granular, and independent signal of financial distress
                 at the district and provincial level &mdash; a signal that complements traditional macroeconomic
                 indicators and may surface emerging vulnerabilities earlier.
               </p>
               <p class="mb-0">
                 This dashboard operationalises that monitoring function using near-real-time global event data
-                from GDELT, delivering weekly crime intensity trends across all 34 provinces and 500+ districts
+                from GDELT, delivering weekly conflict and violence intensity trends across all 34 provinces and 500+ districts
                 of Indonesia.
               </p>
             </div>
@@ -627,7 +627,7 @@
                     <p class="small mb-2">
                       Events are filtered to <strong>Indonesia only</strong>
                       (<code>ActionGeo_CountryCode = 'ID'</code>) and to CAMEO codes associated with
-                      crime-proximate behaviour:
+                      conflict and violence behaviour:
                     </p>
                     <table class="table table-sm table-borderless small mb-2" style="font-size:.78rem;">
                       <thead><tr><th>Code prefix</th><th>Category</th></tr></thead>
@@ -653,7 +653,7 @@
                 <!-- Intensity index -->
                 <div class="col-md-6">
                   <div class="method-block" style="--accent:#16a085;">
-                    <h6 class="fw-bold mb-2">3. Crime Intensity Index</h6>
+                    <h6 class="fw-bold mb-2">3. Conflict &amp; Violence Intensity Index</h6>
                     <p class="small mb-2">
                       A raw event count treats a single-source local incident the same as a nationally
                       covered atrocity. To correct for this, each event is weighted by two GDELT fields:
@@ -663,7 +663,7 @@
                     </div>
                     <ul class="small mb-0 ps-3">
                       <li><strong>NumMentions</strong> — how many news sources worldwide reported the event; a proxy for significance and scale.</li>
-                      <li><strong>GoldsteinScale</strong> — a theoretical conflict severity score from &minus;10 (most destabilising) to +10 (most cooperative). Crime-proximate events cluster near &minus;10.</li>
+                      <li><strong>GoldsteinScale</strong> — a theoretical conflict severity score from &minus;10 (most destabilising) to +10 (most cooperative). Conflict and violence events cluster near &minus;10.</li>
                     </ul>
                   </div>
                 </div>
@@ -756,7 +756,7 @@
                 <li class="mb-1"><strong>Java / urban bias</strong> — Regions with higher journalist density and internet penetration (Jakarta, Surabaya, Bandung) will appear more active regardless of actual crime rates, systematically understating conditions in remote provinces.</li>
                 <li class="mb-1"><strong>Automated event coding</strong> — CAMEO classification is performed by machine-learning models. Miscoding, duplicate events from multiple articles about the same incident (partially mitigated by deduplication), and misgeolocation are inherent risks.</li>
                 <li class="mb-1"><strong>Spatial precision</strong> — GDELT geolocates events to named places; precision varies from district level to province level. Approximately 2.5% of events cannot be matched to a district polygon and are excluded from district-level charts.</li>
-                <li class="mb-1"><strong>No causal inference</strong> — Correlation between crime intensity and economic distress is well-supported in the literature, but this dashboard cannot establish causation for any specific event or trend.</li>
+                <li class="mb-1"><strong>No causal inference</strong> — Correlation between conflict and violence intensity and economic distress is well-supported in the literature, but this dashboard cannot establish causation for any specific event or trend.</li>
                 <li class="mb-0"><strong>Static data snapshot</strong> — The dashboard reflects data as of the last pipeline run. It is not updated in real time; the data range shown in the header indicates the latest available date.</li>
               </ul>
 
