@@ -326,6 +326,60 @@
           </div>
         </div>
       </div>
+      <!-- ── By event code ── -->
+      <div class="card-title" style="font-size:.75rem;color:var(--muted);text-transform:uppercase;
+           letter-spacing:.7px;margin-top:8px;margin-bottom:4px;padding-left:2px;">
+        National Trend by Event Code Family
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title" style="color:#2563eb;">Protests &amp; Demonstrations — Code 14x</div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="small fw-semibold mb-1" style="color:var(--muted);">Event Count</div>
+              <div style="height:180px"><canvas id="chart14Count"></canvas></div>
+            </div>
+            <div class="col-md-6">
+              <div class="small fw-semibold mb-1" style="color:var(--muted);">Intensity</div>
+              <div style="height:180px"><canvas id="chart14Intens"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title" style="color:#F53003;">Assault &amp; Physical Violence — Code 18x</div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="small fw-semibold mb-1" style="color:var(--muted);">Event Count</div>
+              <div style="height:180px"><canvas id="chart18Count"></canvas></div>
+            </div>
+            <div class="col-md-6">
+              <div class="small fw-semibold mb-1" style="color:var(--muted);">Intensity</div>
+              <div style="height:180px"><canvas id="chart18Intens"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title" style="color:#7c3aed;">Mass Violence &amp; Coercion — Code 19x</div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="small fw-semibold mb-1" style="color:var(--muted);">Event Count</div>
+              <div style="height:180px"><canvas id="chart19Count"></canvas></div>
+            </div>
+            <div class="col-md-6">
+              <div class="small fw-semibold mb-1" style="color:var(--muted);">Intensity</div>
+              <div style="height:180px"><canvas id="chart19Intens"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- ══════════════════════════════
@@ -709,17 +763,19 @@ const FILES = [
   'data/district_trend_count.json',
   'data/district_trend_intens.json',
   'data/district_table.json',
+  'data/national_by_code.json',
 ];
 
 Promise.all(FILES.map(f => fetch(f).then(r => r.json())))
   .then(([meta, national, weeks, provDs, top25Count, top25Intens,
-          mapLookup, distTrendCount, distTrendIntens, distTable]) => {
+          mapLookup, distTrendCount, distTrendIntens, distTable, byCode]) => {
 
     populateKpis(meta);
     renderNational(national, weeks, meta.grandMean);
     renderProvince(weeks, provDs);
     renderTop25Bar('chartTop25Count',  top25Count.slice(0,10),  'event_count',     'events');
     renderTop25Bar('chartTop25Intens', top25Intens.slice(0,10), 'total_intensity', 'intensity');
+    renderCodeCharts(byCode, weeks);
     renderSmallMultiples('gridDistCount',  distTrendCount,  weeks, 'Events');
     renderSmallMultiples('gridDistIntens', distTrendIntens, weeks, 'Intensity');
     setupMap(mapLookup, meta);
@@ -867,6 +923,52 @@ function renderTop25Bar(canvasId, data, valueKey, unit) {
       },
     },
   });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CHARTS — By event code (14x / 18x / 19x)
+══════════════════════════════════════════════════════════════ */
+const CODE_META = {
+  '14': { countId:'chart14Count', intensId:'chart14Intens', color:'#2563eb' },
+  '18': { countId:'chart18Count', intensId:'chart18Intens', color:'#F53003' },
+  '19': { countId:'chart19Count', intensId:'chart19Intens', color:'#7c3aed' },
+};
+
+function renderCodeBar(canvasId, data, valueKey, rollKey, color, weeks) {
+  new Chart(document.getElementById(canvasId), {
+    data: {
+      labels: weeks,
+      datasets: [
+        { type:'bar',  data: data.map(d => d[valueKey]),
+          backgroundColor:'#cccccc', borderWidth:0, order:2 },
+        { type:'line', data: data.map(d => d[rollKey]),
+          borderColor: color, backgroundColor:'transparent',
+          borderWidth:2, pointRadius:0, tension:0.35, order:1 },
+      ],
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      scales: {
+        x: xAxis(weeks),
+        y: { ticks:{ callback: v => v.toLocaleString(), font:{size:9} },
+             grid:{ color:'#eeeeee' } },
+      },
+      plugins: {
+        legend:{ display:false },
+        tooltip:{ callbacks:{
+          label: ctx => ` ${Number(ctx.raw).toLocaleString(undefined,{maximumFractionDigits:0})}`,
+        }},
+      },
+    },
+  });
+}
+
+function renderCodeCharts(byCode, weeks) {
+  for (const [code, meta] of Object.entries(CODE_META)) {
+    const data = byCode[code] || [];
+    renderCodeBar(meta.countId,  data, 'events',    'rolling4_count',  meta.color, weeks);
+    renderCodeBar(meta.intensId, data, 'intensity', 'rolling4_intens', meta.color, weeks);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════

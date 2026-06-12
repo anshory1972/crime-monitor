@@ -177,10 +177,29 @@ def main():
         'mapPrevEnd':     (max_date - pd.Timedelta(days=30)).strftime('%d %b %Y'),
     }
 
+    # ── National weekly by event code (14x, 18x, 19x) ───────────
+    df['event_family'] = df['EventCode'].astype(str).str[:2]
+    code_data = {}
+    for code in ['14', '18', '19']:
+        sub = df[df['event_family'] == code]
+        sub_wk = (
+            sub.groupby('week')
+            .agg(intensity=('intensity','sum'), events=('intensity','count'))
+            .reset_index()
+        )
+        base = pd.DataFrame({'week': all_weeks})
+        sub_wk = base.merge(sub_wk, on='week', how='left').fillna(0)
+        sub_wk['rolling4_intens'] = sub_wk['intensity'].rolling(4, min_periods=1).mean().round(2)
+        sub_wk['rolling4_count']  = sub_wk['events'].rolling(4, min_periods=1).mean().round(2)
+        sub_wk['intensity'] = sub_wk['intensity'].round(2)
+        sub_wk['events']    = sub_wk['events'].astype(int)
+        code_data[code] = sub_wk[['week','events','intensity','rolling4_count','rolling4_intens']].to_dict('records')
+
     # ── Write ─────────────────────────────────────────────────────
     print("\nWriting JSON files ...")
     save_json('meta.json',                  meta)
     save_json('national.json',              nat[['week','intensity','rolling4']].to_dict('records'))
+    save_json('national_by_code.json',      code_data)
     save_json('weeks.json',                 all_weeks)
     save_json('province_datasets.json',     prov_datasets)
     save_json('top25_count.json',           top25_count)
