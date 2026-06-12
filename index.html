@@ -272,7 +272,7 @@
           <div class="metric-note">
             <div class="mn-title">&#8505; How to read this chart</div>
             <ul>
-              <li><strong>Intensity</strong> = NumMentions &times; |GoldsteinScale| per event, summed nationally each week. It is a <strong>media-weighted severity score</strong>, not a crime rate or incident count.</li>
+              <li><strong>Intensity</strong> = NumMentions &times; |GoldsteinScale| per event, summed nationally each week. It is a <strong>media-weighted severity score</strong>, not a conflict rate or incident count.</li>
               <li>A spike may mean more events occurred <em>or</em> that existing events received heavier national/international news coverage — these cannot be separated.</li>
               <li>The metric is <strong>not normalised</strong> by population, area, or time period length.</li>
             </ul>
@@ -291,7 +291,7 @@
             <div class="mn-title">&#8505; Interpreting province intensity</div>
             <ul>
               <li>Provinces ranked by <strong>total intensity over 24 months</strong> — heavily biased toward provinces with dense media coverage (DKI Jakarta, East Java, West Java will dominate).</li>
-              <li>A province appearing high on this chart does <strong>not</strong> mean it has the highest actual crime rate — it means crime-related news events there received more media attention.</li>
+              <li>A province appearing high on this chart does <strong>not</strong> mean it has the highest actual conflict and violence rate — it means conflict- and violence-related news events there received more media attention.</li>
             </ul>
           </div>
         </div>
@@ -306,7 +306,7 @@
             <ul>
               <li>Number of <strong>distinct GDELT news events</strong> (after deduplication) coded as protests, violence, or coercion in that district over 24 months.</li>
               <li>Sourced from <strong>media reports, not police records</strong>. One incident covered by 100 outlets still counts as 1 event here.</li>
-              <li>High count may reflect high journalist density, not high crime.</li>
+              <li>High count may reflect high journalist density, not high conflict activity.</li>
             </ul>
           </div>
         </div>
@@ -320,7 +320,7 @@
             <div class="mn-title">&#8505; Total intensity</div>
             <ul>
               <li><strong>Intensity = &sum;(NumMentions &times; |GoldsteinScale|)</strong> across all events. A single event covered by 100 sources scores 10&times; higher than one covered by 10.</li>
-              <li><strong>Not normalised</strong> by population or district area. Rankings reflect media prominence, not crime incidence per capita.</li>
+              <li><strong>Not normalised</strong> by population or district area. Rankings reflect media prominence, not conflict and violence incidence per capita.</li>
               <li>A district ranking higher here than in Event Count had <em>fewer but more heavily covered</em> incidents.</li>
             </ul>
           </div>
@@ -412,7 +412,7 @@
         <div class="mn-title">&#8505; How to read these panels</div>
         <ul>
           <li>Each panel = one district. <strong>Bold line</strong> = 4-week rolling average. Thin line = raw weekly count. Each code section is ranked independently by its own total count.</li>
-          <li><strong>Event count</strong> measures distinct GDELT news events, <em>not</em> police-recorded crime. A quiet week may mean few incidents <em>or</em> low media coverage.</li>
+          <li><strong>Event count</strong> measures distinct GDELT news events, <em>not</em> police-recorded incidents. A quiet week may mean few incidents <em>or</em> low media coverage.</li>
         </ul>
       </div>
     </div>
@@ -524,7 +524,7 @@
             <ul>
               <li><strong>Count</strong>: distinct GDELT news events (media reports, not police records). <strong>Intensity</strong>: &sum;(NumMentions &times; |GoldsteinScale|) — media volume &times; CAMEO severity. Neither metric is per capita.</li>
               <li><strong>Current / Last Month / Last Week</strong>: intensity in each time window. Use the <strong>Trend</strong> badge (&uarr;/&darr;) to see if current 30-day intensity is &gt;15% above or below the prior 30-day window.</li>
-              <li>Blank or zero values mean no GDELT events were mapped to that district in that window — not confirmed absence of crime.</li>
+              <li>Blank or zero values mean no GDELT events were mapped to that district in that window — not confirmed absence of conflict or violence.</li>
             </ul>
           </div>
 
@@ -557,9 +557,9 @@
             <div class="card-body">
               <h5 class="fw-bold mb-3" style="color:var(--red);">&#9632; Motivation</h5>
               <p>
-                Economic and financial distress are well-established drivers of crime. When households face
+                Economic and financial distress are well-established drivers of conflict and social unrest. When households face
                 sustained income shocks, rising unemployment, or acute cost-of-living pressures, the incidence
-                of property crime, violent conflict, and social unrest tends to rise. This relationship has been
+                of violent conflict, property disputes, and social unrest tends to rise. This relationship has been
                 documented across both developed and developing economies and operates through multiple channels:
                 reduced legitimate earning opportunities, breakdown of community cohesion, and heightened
                 desperation among vulnerable populations.
@@ -707,11 +707,11 @@
                   <div class="method-block" style="--accent:#d97706;background:#fffbeb;">
                     <h6 class="fw-bold mb-2">6. Limitations &amp; Caveats</h6>
                     <ul class="small mb-0 ps-3">
-                      <li class="mb-1"><strong>Media bias</strong> — GDELT measures news coverage, not actual crime incidence. Events in high-media-density areas (Jakarta, Java) will appear more intense than equivalent events in low-coverage regions.</li>
+                      <li class="mb-1"><strong>Media bias</strong> — GDELT measures news coverage, not actual conflict and violence incidence. Events in high-media-density areas (Jakarta, Java) will appear more intense than equivalent events in low-coverage regions.</li>
                       <li class="mb-1"><strong>Under-reporting</strong> — Rural, remote, and small-scale incidents that do not reach regional or national news outlets will be absent from the data.</li>
-                      <li class="mb-1"><strong>CAMEO coding accuracy</strong> — Event classification is automated; some records may be miscoded or represent non-criminal conflict.</li>
+                      <li class="mb-1"><strong>CAMEO coding accuracy</strong> — Event classification is automated; some records may be miscoded or represent non-conflict events.</li>
                       <li class="mb-1"><strong>Temporal lag</strong> — The pipeline runs on demand; data reflect the last export date, not real-time.</li>
-                      <li class="mb-0"><strong>Indicator, not measure</strong> — This dashboard is a monitoring and early-warning tool. Findings should be validated against official BPS crime statistics and field intelligence before informing policy decisions.</li>
+                      <li class="mb-0"><strong>Indicator, not measure</strong> — This dashboard is a monitoring and early-warning tool. Findings should be validated against official BPS and government statistics and field intelligence before informing policy decisions.</li>
                     </ul>
                   </div>
                 </div>
@@ -752,8 +752,8 @@
 
               <p class="small fw-semibold mb-1">Methodological weaknesses to bear in mind:</p>
               <ul class="small mb-3 ps-3">
-                <li class="mb-1"><strong>Media coverage, not official crime records</strong> — Data are derived from news articles indexed by GDELT, not from police reports, BPS crime statistics, or court records. Events that receive no media coverage are entirely absent.</li>
-                <li class="mb-1"><strong>Java / urban bias</strong> — Regions with higher journalist density and internet penetration (Jakarta, Surabaya, Bandung) will appear more active regardless of actual crime rates, systematically understating conditions in remote provinces.</li>
+                <li class="mb-1"><strong>Media coverage, not official records</strong> — Data are derived from news articles indexed by GDELT, not from police reports, official BPS statistics, or court records. Events that receive no media coverage are entirely absent.</li>
+                <li class="mb-1"><strong>Java / urban bias</strong> — Regions with higher journalist density and internet penetration (Jakarta, Surabaya, Bandung) will appear more active regardless of actual conflict and violence levels, systematically understating conditions in remote provinces.</li>
                 <li class="mb-1"><strong>Automated event coding</strong> — CAMEO classification is performed by machine-learning models. Miscoding, duplicate events from multiple articles about the same incident (partially mitigated by deduplication), and misgeolocation are inherent risks.</li>
                 <li class="mb-1"><strong>Spatial precision</strong> — GDELT geolocates events to named places; precision varies from district level to province level. Approximately 2.5% of events cannot be matched to a district polygon and are excluded from district-level charts.</li>
                 <li class="mb-1"><strong>No causal inference</strong> — Correlation between conflict and violence intensity and economic distress is well-supported in the literature, but this dashboard cannot establish causation for any specific event or trend.</li>
