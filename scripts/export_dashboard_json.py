@@ -177,8 +177,30 @@ def main():
         'mapPrevEnd':     (max_date - pd.Timedelta(days=30)).strftime('%d %b %Y'),
     }
 
-    # ── National weekly by event code (14x, 18x, 19x) ───────────
+    # ── District weekly by event code (14x, 18x, 19x) ───────────
     df['event_family'] = df['EventCode'].astype(str).str[:2]
+    dist_code_count = {}
+    dist_code_intens = {}
+
+    for code in ['14', '18', '19']:
+        sub = df[df['event_family'] == code]
+        sub_wk = (
+            sub.groupby(['week', 'district_name'])
+            .agg(count=('intensity','count'), intensity=('intensity','sum'))
+            .reset_index()
+        )
+        sub_wk['intensity'] = sub_wk['intensity'].round(2)
+
+        pv_dc = sub_wk.pivot_table(index='week', columns='district_name', values='count',     fill_value=0)
+        pv_di = sub_wk.pivot_table(index='week', columns='district_name', values='intensity', fill_value=0)
+
+        top20_dc = sub_wk.groupby('district_name')['count'].sum()    .sort_values(ascending=False).head(20).index.tolist()
+        top20_di = sub_wk.groupby('district_name')['intensity'].sum().sort_values(ascending=False).head(20).index.tolist()
+
+        dist_code_count[code]  = build_datasets(pv_dc, top20_dc, all_weeks, DIST_COLORS)
+        dist_code_intens[code] = build_datasets(pv_di, top20_di, all_weeks, DIST_COLORS)
+
+    # ── National weekly by event code (14x, 18x, 19x) ───────────
     code_data = {}
     for code in ['14', '18', '19']:
         sub = df[df['event_family'] == code]
@@ -199,7 +221,9 @@ def main():
     print("\nWriting JSON files ...")
     save_json('meta.json',                  meta)
     save_json('national.json',              nat[['week','intensity','rolling4']].to_dict('records'))
-    save_json('national_by_code.json',      code_data)
+    save_json('national_by_code.json',       code_data)
+    save_json('dist_trend_count_by_code.json',  dist_code_count)
+    save_json('dist_trend_intens_by_code.json', dist_code_intens)
     save_json('weeks.json',                 all_weeks)
     save_json('province_datasets.json',     prov_datasets)
     save_json('top25_count.json',           top25_count)

@@ -386,18 +386,34 @@
          TAB 2 — DISTRICT COUNT TREND
     ══════════════════════════════ -->
     <div class="tab-pane fade" id="tabCountTrend" role="tabpanel">
+
       <div class="card">
         <div class="card-body">
-          <div class="card-title">Weekly Event Count — Top 25 Districts</div>
-          <div id="gridDistCount" class="dist-grid"></div>
-          <div class="metric-note">
-            <div class="mn-title">&#8505; How to read these panels</div>
-            <ul>
-              <li>Each panel = one district. <strong>Bold line</strong> = 4-week rolling average. Thin line = raw weekly count. Districts ranked by total event count over 24 months.</li>
-              <li><strong>Event count</strong> measures distinct GDELT news events (protests, violence, coercion), <em>not</em> police-recorded crime. A quiet week may mean few incidents <em>or</em> low media attention.</li>
-            </ul>
-          </div>
+          <div class="card-title" style="color:#2563eb;">Protests &amp; Demonstrations — Code 14x &nbsp;<span class="fw-normal text-muted" style="font-size:.74rem;">Top 20 by count</span></div>
+          <div id="gridCount14" class="dist-grid"></div>
         </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title" style="color:#F53003;">Assault &amp; Physical Violence — Code 18x &nbsp;<span class="fw-normal text-muted" style="font-size:.74rem;">Top 20 by count</span></div>
+          <div id="gridCount18" class="dist-grid"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title" style="color:#7c3aed;">Mass Violence &amp; Coercion — Code 19x &nbsp;<span class="fw-normal text-muted" style="font-size:.74rem;">Top 20 by count</span></div>
+          <div id="gridCount19" class="dist-grid"></div>
+        </div>
+      </div>
+
+      <div class="metric-note">
+        <div class="mn-title">&#8505; How to read these panels</div>
+        <ul>
+          <li>Each panel = one district. <strong>Bold line</strong> = 4-week rolling average. Thin line = raw weekly count. Each code section is ranked independently by its own total count.</li>
+          <li><strong>Event count</strong> measures distinct GDELT news events, <em>not</em> police-recorded crime. A quiet week may mean few incidents <em>or</em> low media coverage.</li>
+        </ul>
       </div>
     </div>
 
@@ -405,18 +421,34 @@
          TAB 3 — DISTRICT INTENSITY TREND
     ══════════════════════════════ -->
     <div class="tab-pane fade" id="tabIntensTrend" role="tabpanel">
+
       <div class="card">
         <div class="card-body">
-          <div class="card-title">Weekly Intensity — Top 25 Districts</div>
-          <div id="gridDistIntens" class="dist-grid"></div>
-          <div class="metric-note">
-            <div class="mn-title">&#8505; How to read these panels</div>
-            <ul>
-              <li>Each panel = one district. <strong>Bold line</strong> = 4-week rolling average of intensity. Thin line = raw weekly value. Districts ranked by total intensity over 24 months.</li>
-              <li><strong>Intensity = &sum;(NumMentions &times; |GoldsteinScale|)</strong>. A single heavily-reported event can produce a large spike even if the district is otherwise quiet. Not per capita.</li>
-            </ul>
-          </div>
+          <div class="card-title" style="color:#2563eb;">Protests &amp; Demonstrations — Code 14x &nbsp;<span class="fw-normal text-muted" style="font-size:.74rem;">Top 20 by intensity</span></div>
+          <div id="gridIntens14" class="dist-grid"></div>
         </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title" style="color:#F53003;">Assault &amp; Physical Violence — Code 18x &nbsp;<span class="fw-normal text-muted" style="font-size:.74rem;">Top 20 by intensity</span></div>
+          <div id="gridIntens18" class="dist-grid"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title" style="color:#7c3aed;">Mass Violence &amp; Coercion — Code 19x &nbsp;<span class="fw-normal text-muted" style="font-size:.74rem;">Top 20 by intensity</span></div>
+          <div id="gridIntens19" class="dist-grid"></div>
+        </div>
+      </div>
+
+      <div class="metric-note">
+        <div class="mn-title">&#8505; How to read these panels</div>
+        <ul>
+          <li>Each panel = one district. <strong>Bold line</strong> = 4-week rolling average of intensity. Thin line = raw weekly value. Each code section is ranked independently by its own total intensity.</li>
+          <li><strong>Intensity = &sum;(NumMentions &times; |GoldsteinScale|)</strong>. A single heavily-reported event can spike a chart. Not per capita.</li>
+        </ul>
       </div>
     </div>
 
@@ -764,11 +796,14 @@ const FILES = [
   'data/district_trend_intens.json',
   'data/district_table.json',
   'data/national_by_code.json',
+  'data/dist_trend_count_by_code.json',
+  'data/dist_trend_intens_by_code.json',
 ];
 
 Promise.all(FILES.map(f => fetch(f).then(r => r.json())))
   .then(([meta, national, weeks, provDs, top25Count, top25Intens,
-          mapLookup, distTrendCount, distTrendIntens, distTable, byCode]) => {
+          mapLookup, distTrendCount, distTrendIntens, distTable,
+          byCode, distCountByCode, distIntensByCode]) => {
 
     populateKpis(meta);
     renderNational(national, weeks, meta.grandMean);
@@ -776,8 +811,11 @@ Promise.all(FILES.map(f => fetch(f).then(r => r.json())))
     renderTop25Bar('chartTop25Count',  top25Count.slice(0,10),  'event_count',     'events');
     renderTop25Bar('chartTop25Intens', top25Intens.slice(0,10), 'total_intensity', 'intensity');
     renderCodeCharts(byCode, weeks);
-    renderSmallMultiples('gridDistCount',  distTrendCount,  weeks, 'Events');
-    renderSmallMultiples('gridDistIntens', distTrendIntens, weeks, 'Intensity');
+
+    for (const code of ['14','18','19']) {
+      renderSmallMultiples(`gridCount${code}`,  distCountByCode[code]  || [], weeks, 'Events');
+      renderSmallMultiples(`gridIntens${code}`, distIntensByCode[code] || [], weeks, 'Intensity');
+    }
     setupMap(mapLookup, meta);
     setupTable(distTable);
 
