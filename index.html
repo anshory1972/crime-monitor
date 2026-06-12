@@ -134,9 +134,9 @@
 
   /* ── About ─────────────────────────────────────────────── */
   .about-hero { background:linear-gradient(135deg, #1b1b18 0%, #2c2c28 100%);
-                color:#fff; border-radius:12px; padding:52px 28px;
-                text-align:center; margin-bottom:24px;
-                border:1px solid rgba(245,48,3,.25); }
+                color:#fff; border-radius:12px; padding:40px 36px;
+                display:flex; align-items:center; gap:28px;
+                margin-bottom:24px; border:1px solid rgba(245,48,3,.25); }
   .about-hero .title  { font-size:1.5rem; font-weight:700; margin-bottom:6px; }
   .about-hero .org    { color:rgba(255,255,255,.6); font-size:.9rem; }
   .about-hero .meta   { color:rgba(255,255,255,.35); font-size:.76rem; margin-top:6px; }
@@ -150,6 +150,53 @@
   #tabAbout ul li, #tabAbout ol li { margin-bottom:3px; }
   #tabAbout code { background:#f0f0ee; padding:1px 5px; border-radius:3px;
                    font-size:.78rem; color:var(--dark); }
+
+  /* ── Mobile ───────────────────────────────────────────── */
+  @media (max-width: 767px) {
+    /* Top bar: shrink padding, truncate long title */
+    .top-bar { padding:0 14px; min-height:50px; height:auto; }
+    .top-bar .brand { font-size:.8rem; white-space:nowrap; overflow:hidden;
+                      text-overflow:ellipsis; max-width:200px; }
+    .top-bar .sub { display:none; }
+
+    /* KPI strip: 2-per-row wrap */
+    .kpi-strip { padding:0 14px; flex-wrap:wrap; }
+    .kpi { flex:1 1 45%; border-right:none !important;
+           border-bottom:1px solid var(--border); padding:10px 8px; }
+    .kpi:nth-child(odd)  { border-right:1px solid var(--border) !important; }
+    .kpi:last-child      { border-bottom:none; }
+    .kpi .val { font-size:1.1rem; }
+    .kpi .lbl { font-size:.6rem; }
+
+    /* Nav tabs: horizontal scroll, no wrap */
+    .nav-tabs { flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch;
+                scrollbar-width:none; }
+    .nav-tabs::-webkit-scrollbar { display:none; }
+    .nav-tabs .nav-link { padding:8px 12px; font-size:.74rem; white-space:nowrap; }
+
+    /* Main & card padding */
+    .main { padding:12px 12px; }
+    .card-body { padding:14px 14px; }
+
+    /* About hero: stack vertically */
+    .about-hero { padding:28px 16px; flex-direction:column; align-items:center;
+                  text-align:center; gap:16px; }
+    .about-hero .title { font-size:1.1rem; }
+    .about-hero .divider { margin:10px auto; }
+
+    /* Map height */
+    #map { height:360px; }
+
+    /* Metric notes */
+    .metric-note { font-size:.75rem; padding:8px 10px; }
+
+    /* District small multiples: 2 cols minimum */
+    .dist-grid { grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:8px; }
+    .dist-canvas-wrap { height:72px; }
+
+    /* Table: horizontal scroll */
+    .tbl-wrap { overflow-x:auto; }
+  }
 
   /* ── Loading ───────────────────────────────────────────── */
   #loader { position:fixed; inset:0; background:rgba(245,245,242,.92);
