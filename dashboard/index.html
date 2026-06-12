@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DCMB | DEN Media-based Crime Monitoring Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+<style>
+  /* ── DEN Brand Palette ─────────────────────────────────── */
+  :root {
+    --red:    #F53003;
+    --dark:   #1b1b18;
+    --muted:  #706f6c;
+    --border: #e3e3e0;
+    --bg:     #f5f5f2;
+    --card:   #ffffff;
+    --blue:   #2563eb;
+    --text:   #1b1b18;
+  }
+
+  /* ── Base ──────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; }
+  body { background:var(--bg); font-family:'Inter','Segoe UI',system-ui,sans-serif;
+         font-size:14px; color:var(--text); }
+
+  /* ── Top bar ───────────────────────────────────────────── */
+  .top-bar { background:var(--dark); color:#fff; padding:0 28px; height:60px;
+             display:flex; align-items:center; justify-content:space-between;
+             border-bottom:3px solid var(--red); }
+  .top-bar .brand { font-size:1rem; font-weight:700; letter-spacing:.2px; line-height:1.2; }
+  .top-bar .sub   { font-size:.7rem; color:rgba(255,255,255,.45); margin-top:2px; }
+  .top-bar .right-label { font-size:.72rem; color:rgba(255,255,255,.35);
+                          text-align:right; white-space:nowrap; }
+
+  /* ── KPI strip ─────────────────────────────────────────── */
+  .kpi-strip { background:#fff; border-bottom:1px solid var(--border);
+               padding:0 28px; display:flex; }
+  .kpi { flex:1; padding:14px 20px; border-right:1px solid var(--border);
+         min-width:0; position:relative; }
+  .kpi:first-child { padding-left:4px; }
+  .kpi:last-child  { border-right:none; }
+  .kpi::after { content:''; position:absolute; bottom:0; left:0; right:0;
+                height:2px; background:var(--red); transform:scaleX(0);
+                transition:transform .2s; transform-origin:left; }
+  .kpi:hover::after { transform:scaleX(1); }
+  .kpi .val { font-size:1.45rem; font-weight:700; color:var(--red);
+              line-height:1.1; letter-spacing:-.5px; }
+  .kpi .lbl { font-size:.67rem; color:var(--muted); text-transform:uppercase;
+              letter-spacing:.6px; margin-top:4px; }
+
+  /* ── Main layout ───────────────────────────────────────── */
+  .main { padding:22px 28px; }
+
+  /* ── Cards ─────────────────────────────────────────────── */
+  .card { border:1px solid var(--border); border-radius:10px; background:var(--card);
+          box-shadow:0 1px 4px rgba(27,27,24,.06); margin-bottom:20px; }
+  .card-body { padding:20px 22px; }
+  .card-title { font-size:.82rem; font-weight:600; color:var(--dark);
+                margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+  .card-title::before { content:''; display:inline-block; width:3px; height:14px;
+                        background:var(--red); border-radius:2px; flex-shrink:0; }
+
+  /* ── Tabs ──────────────────────────────────────────────── */
+  .nav-tabs { border-bottom:1px solid var(--border); gap:0; margin-bottom:0 !important; }
+  .nav-tabs .nav-link { font-size:.81rem; font-weight:500; color:var(--muted);
+                        padding:10px 18px; border:none; border-bottom:2px solid transparent;
+                        margin-bottom:-1px; border-radius:0;
+                        transition:color .15s,border-color .15s; background:none; }
+  .nav-tabs .nav-link:hover { color:var(--red); background:none; }
+  .nav-tabs .nav-link.active { color:var(--red); font-weight:600;
+                               border-bottom:2px solid var(--red); background:none; }
+  .tab-content { padding-top:22px; }
+
+  /* ── District trend charts ─────────────────────────────── */
+  .trend-wrap { display:flex; gap:14px; }
+  .trend-wrap canvas { flex:1; min-width:0; }
+  .trend-legend { width:175px; flex-shrink:0; overflow-y:auto;
+                  max-height:500px; font-size:.74rem; }
+  .trend-legend .li { display:flex; align-items:center; gap:7px;
+                      padding:3px 0; cursor:pointer; user-select:none;
+                      border-radius:4px; padding:3px 4px;
+                      transition:background .1s; }
+  .trend-legend .li:hover { background:#f5f5f2; }
+  .trend-legend .li .dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .trend-legend .li.hidden { opacity:.28; }
+
+  /* ── District small multiples ──────────────────────────── */
+  .dist-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px,1fr)); gap:10px; }
+  .dist-cell { background:var(--bg); border:1px solid var(--border); border-radius:8px;
+               padding:10px 12px 8px; }
+  .dist-label { font-size:.71rem; font-weight:600; color:var(--dark);
+                white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+                display:flex; align-items:center; gap:5px; margin-bottom:2px; }
+  .dist-label .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .dist-canvas-wrap { height:88px; position:relative; }
+
+  /* ── Metric interpretation notes ──────────────────────── */
+  .metric-note { background:#f0f6ff; border-left:3px solid #93c5fd; border-radius:0 5px 5px 0;
+                 padding:9px 14px; font-size:.8rem; color:#374151; margin-top:14px; margin-bottom:0;
+                 line-height:1.55; }
+  .metric-note .mn-title { font-weight:700; color:#1e40af; margin-bottom:2px; }
+  .metric-note ul { margin:4px 0 0; padding-left:16px; }
+  .metric-note ul li { margin-bottom:2px; }
+
+  /* ── Map ───────────────────────────────────────────────── */
+  #map { height:520px; border-radius:8px; }
+  .period-label { font-size:.71rem; color:var(--muted); }
+  .legend-row { font-size:.75rem; color:var(--muted); margin-top:8px;
+                display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .lbox { width:13px; height:13px; display:inline-block;
+          border-radius:2px; vertical-align:middle; margin-right:3px; }
+
+  /* ── District table ────────────────────────────────────── */
+  #searchBox { max-width:280px; font-size:.82rem; border-color:var(--border);
+               border-radius:6px; }
+  #searchBox:focus { border-color:var(--red); box-shadow:0 0 0 3px rgba(245,48,3,.1);
+                     outline:none; }
+  #distTable { font-size:.79rem; }
+  #distTable thead th { position:sticky; top:0; background:#fff; z-index:1;
+                        cursor:pointer; white-space:nowrap; font-size:.71rem;
+                        color:var(--muted); font-weight:600;
+                        border-bottom:2px solid var(--border); padding:9px 10px; }
+  #distTable thead th:hover { color:var(--red); }
+  #distTable tbody td { padding:7px 10px; vertical-align:middle; }
+  #distTable tbody tr:hover { background:#fef7f5; }
+  .trend-up   { color:var(--red);  font-weight:700; }
+  .trend-down { color:var(--blue); font-weight:700; }
+  .trend-flat { color:#c0bcb8; }
+  .sort-icon  { font-size:.58rem; opacity:.55; margin-left:2px; }
+  .tbl-wrap   { max-height:600px; overflow-y:auto;
+                border:1px solid var(--border); border-radius:8px; }
+
+  /* ── About ─────────────────────────────────────────────── */
+  .about-hero { background:linear-gradient(135deg, #1b1b18 0%, #2c2c28 100%);
+                color:#fff; border-radius:12px; padding:52px 28px;
+                text-align:center; margin-bottom:24px;
+                border:1px solid rgba(245,48,3,.25); }
+  .about-hero .title  { font-size:1.5rem; font-weight:700; margin-bottom:6px; }
+  .about-hero .org    { color:rgba(255,255,255,.6); font-size:.9rem; }
+  .about-hero .meta   { color:rgba(255,255,255,.35); font-size:.76rem; margin-top:6px; }
+  .about-hero .divider { width:40px; height:2px; background:var(--red);
+                         margin:16px auto; border-radius:2px; }
+  .method-block { background:#fafaf8; border-left:3px solid var(--accent,var(--red)); border-radius:8px; padding:18px 20px; height:100%; }
+  #tabAbout h5 { font-size:.88rem; font-weight:700; margin-bottom:12px; }
+  #tabAbout h6.fw-bold { font-size:.82rem; }
+  #tabAbout p.small, #tabAbout ul.small, #tabAbout ol.small { font-size:.8rem; line-height:1.6; }
+  #tabAbout .table td, #tabAbout .table th { padding:3px 8px; font-size:.78rem; }
+  #tabAbout ul li, #tabAbout ol li { margin-bottom:3px; }
+  #tabAbout code { background:#f0f0ee; padding:1px 5px; border-radius:3px;
+                   font-size:.78rem; color:var(--dark); }
+
+  /* ── Loading ───────────────────────────────────────────── */
+  #loader { position:fixed; inset:0; background:rgba(245,245,242,.92);
+            display:flex; flex-direction:column; align-items:center;
+            justify-content:center; z-index:9999; gap:14px; }
+  #loader .spinner-border { color:var(--red); width:2.4rem; height:2.4rem; }
+  #loader p { color:var(--muted); font-size:.88rem; margin:0; }
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="spinner-border" role="status"></div>
+  <p>Loading dashboard data&hellip;</p>
+</div>
+
+<div class="top-bar">
+  <div class="d-flex align-items-center gap-3">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Lambang_Dewan_Ekonomi_Nasional_Republik_Indonesia_%282025%29.svg/250px-Lambang_Dewan_Ekonomi_Nasional_Republik_Indonesia_%282025%29.svg.png"
+         alt="DEN Logo" style="height:38px;width:auto;flex-shrink:0;">
+    <div>
+      <div class="brand">DCMB | DEN Media-based Crime Monitoring Dashboard</div>
+      <div class="sub">Dewan Ekonomi Nasional &middot; Republik Indonesia</div>
+    </div>
+  </div>
+  <div class="right-label d-none d-md-block">GDELT v2 Events<br>BPS Administrative Boundaries</div>
+</div>
+
+<div class="kpi-strip">
+  <div class="kpi">
+    <div class="val" id="kTotalEvents">—</div>
+    <div class="lbl">Total Events · 24 months</div>
+  </div>
+  <div class="kpi">
+    <div class="val" id="kTotalIntens">—</div>
+    <div class="lbl">Total Intensity</div>
+  </div>
+  <div class="kpi">
+    <div class="val" id="kWeeklyMean">—</div>
+    <div class="lbl">Weekly Mean Intensity</div>
+  </div>
+  <div class="kpi">
+    <div class="val" id="kDateRange">—</div>
+    <div class="lbl" id="kDateLbl">Date Range</div>
+  </div>
+  <div class="kpi">
+    <div class="val" id="kGeo">—</div>
+    <div class="lbl">Provinces / Districts</div>
+  </div>
+</div>
+
+<div class="main">
+  <ul class="nav nav-tabs mb-3" id="mainTabs" role="tablist">
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAbout"      role="tab">About DCMB</button></li>
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabOverview"  role="tab">Trend &amp; Rankings</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabCountTrend"  role="tab">Count Trend</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabIntensTrend" role="tab">Intensity Trend</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabMap"         role="tab" id="mapTabBtn">Map</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabTable"       role="tab" id="tblTabBtn">District Table</button></li>
+  </ul>
+
+  <div class="tab-content">
+
+    <!-- ══════════════════════════════
+         TAB 1 — TREND & RANKINGS
+    ══════════════════════════════ -->
+    <div class="tab-pane fade show active" id="tabOverview" role="tabpanel">
+
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title">Indonesia National Crime Intensity Trend (GDELT-based, 2024&ndash;2026)</div>
+          <div style="height:260px"><canvas id="chartNational"></canvas></div>
+          <div class="metric-note">
+            <div class="mn-title">&#8505; How to read this chart</div>
+            <ul>
+              <li><strong>Intensity</strong> = NumMentions &times; |GoldsteinScale| per event, summed nationally each week. It is a <strong>media-weighted severity score</strong>, not a crime rate or incident count.</li>
+              <li>A spike may mean more events occurred <em>or</em> that existing events received heavier national/international news coverage — these cannot be separated.</li>
+              <li>The metric is <strong>not normalised</strong> by population, area, or time period length.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title">
+            Province Weekly Intensity — Top 8
+            <span class="text-muted fw-normal" style="font-size:.76rem">&nbsp;(click legend to toggle)</span>
+          </div>
+          <div style="height:280px"><canvas id="chartProvince"></canvas></div>
+          <div class="metric-note">
+            <div class="mn-title">&#8505; Interpreting province intensity</div>
+            <ul>
+              <li>Provinces ranked by <strong>total intensity over 24 months</strong> — heavily biased toward provinces with dense media coverage (DKI Jakarta, East Java, West Java will dominate).</li>
+              <li>A province appearing high on this chart does <strong>not</strong> mean it has the highest actual crime rate — it means crime-related news events there received more media attention.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-lg-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="card-title">Top 25 Districts — Event Count (24 months)</div>
+              <div style="height:580px"><canvas id="chartTop25Count"></canvas></div>
+              <div class="metric-note">
+                <div class="mn-title">&#8505; Event count</div>
+                <ul>
+                  <li>Number of <strong>distinct GDELT news events</strong> (after deduplication) coded as protests, violence, or coercion in that district over 24 months.</li>
+                  <li>Sourced from <strong>media reports, not police records</strong>. One incident covered by 100 outlets still counts as 1 event here.</li>
+                  <li>High count may reflect high journalist density, not high crime.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="card-title">Top 25 Districts — Total Intensity (24 months)</div>
+              <div style="height:580px"><canvas id="chartTop25Intens"></canvas></div>
+              <div class="metric-note">
+                <div class="mn-title">&#8505; Total intensity</div>
+                <ul>
+                  <li><strong>Intensity = &sum;(NumMentions &times; |GoldsteinScale|)</strong> across all events. A single event covered by 100 sources scores 10&times; higher than one covered by 10.</li>
+                  <li><strong>Not normalised</strong> by population or district area. Rankings reflect media prominence, not crime incidence per capita.</li>
+                  <li>Compare this chart with Event Count on the left: a district ranked higher here than there had <em>fewer but more heavily covered</em> incidents.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         TAB 2 — DISTRICT COUNT TREND
+    ══════════════════════════════ -->
+    <div class="tab-pane fade" id="tabCountTrend" role="tabpanel">
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title">Weekly Event Count — Top 25 Districts</div>
+          <div id="gridDistCount" class="dist-grid"></div>
+          <div class="metric-note">
+            <div class="mn-title">&#8505; How to read these panels</div>
+            <ul>
+              <li>Each panel = one district. <strong>Bold line</strong> = 4-week rolling average. Thin line = raw weekly count. Districts ranked by total event count over 24 months.</li>
+              <li><strong>Event count</strong> measures distinct GDELT news events (protests, violence, coercion), <em>not</em> police-recorded crime. A quiet week may mean few incidents <em>or</em> low media attention.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         TAB 3 — DISTRICT INTENSITY TREND
+    ══════════════════════════════ -->
+    <div class="tab-pane fade" id="tabIntensTrend" role="tabpanel">
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title">Weekly Intensity — Top 25 Districts</div>
+          <div id="gridDistIntens" class="dist-grid"></div>
+          <div class="metric-note">
+            <div class="mn-title">&#8505; How to read these panels</div>
+            <ul>
+              <li>Each panel = one district. <strong>Bold line</strong> = 4-week rolling average of intensity. Thin line = raw weekly value. Districts ranked by total intensity over 24 months.</li>
+              <li><strong>Intensity = &sum;(NumMentions &times; |GoldsteinScale|)</strong>. A single heavily-reported event can produce a large spike even if the district is otherwise quiet. Not per capita.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         TAB 4 — MAP
+    ══════════════════════════════ -->
+    <div class="tab-pane fade" id="tabMap" role="tabpanel">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+            <div>
+              <div class="card-title mb-0">District Crime Intensity Map</div>
+              <div class="period-label mt-1" id="periodLabel"></div>
+            </div>
+            <div class="btn-group btn-group-sm" role="group">
+              <input type="radio" class="btn-check" name="period" id="pCurr"   value="curr"   checked>
+              <label class="btn btn-outline-danger"    for="pCurr">Current (last 30d)</label>
+              <input type="radio" class="btn-check" name="period" id="pPrev"   value="prev">
+              <label class="btn btn-outline-secondary" for="pPrev">Previous (30–60d ago)</label>
+              <input type="radio" class="btn-check" name="period" id="pChange" value="change">
+              <label class="btn btn-outline-primary"   for="pChange">Change</label>
+            </div>
+          </div>
+          <div id="map"></div>
+          <div id="mapLegend" class="legend-row"></div>
+          <div class="metric-note">
+            <div class="mn-title">&#8505; What the map shows</div>
+            <ul>
+              <li><strong>Colour intensity</strong> = total GDELT event intensity (NumMentions &times; |GoldsteinScale|) for the selected period. Darker = higher media-weighted severity. <strong>Not per capita or per km&sup2;.</strong></li>
+              <li><strong>Current / Previous</strong>: 30-day windows. <strong>Change</strong>: red = increased, blue = decreased versus the prior 30-day window. Hover any district for exact values.</li>
+              <li>Districts with no GDELT events in a period appear light grey — this may mean no incidents <em>or</em> no media coverage reaching GDELT.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         TAB 5 — DISTRICT TABLE
+    ══════════════════════════════ -->
+    <div class="tab-pane fade" id="tabTable" role="tabpanel">
+      <div class="card">
+        <div class="card-body">
+
+          <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div class="card-title mb-0">All Districts — Crime Summary</div>
+            <div class="d-flex gap-2 align-items-center">
+              <input type="text" id="searchBox" class="form-control form-control-sm"
+                     placeholder="Search district or province&hellip;">
+              <span class="text-muted small" id="tblCount"></span>
+            </div>
+          </div>
+
+          <div class="tbl-wrap">
+            <table class="table table-sm table-hover mb-0" id="distTable">
+              <thead>
+                <tr>
+                  <th data-col="rank"          class="text-center">#</th>
+                  <th data-col="district_name"               >District</th>
+                  <th data-col="event_count"   class="text-end">Count<br><small>24 months</small></th>
+                  <th data-col="total_intensity" class="text-end">Intensity<br><small>24 months</small></th>
+                  <th data-col="curr_intensity"  class="text-end">Current<br><small>last 30d</small></th>
+                  <th data-col="prev_intensity"  class="text-end">Last Month<br><small>30–60d ago</small></th>
+                  <th data-col="week_intensity"  class="text-end">Last Week<br><small>7d</small></th>
+                  <th data-col="trend"           class="text-center">Trend</th>
+                </tr>
+              </thead>
+              <tbody id="tblBody"></tbody>
+            </table>
+          </div>
+          <div class="metric-note">
+            <div class="mn-title">&#8505; Column definitions</div>
+            <ul>
+              <li><strong>Count</strong>: distinct GDELT news events (media reports, not police records). <strong>Intensity</strong>: &sum;(NumMentions &times; |GoldsteinScale|) — media volume &times; CAMEO severity. Neither metric is per capita.</li>
+              <li><strong>Current / Last Month / Last Week</strong>: intensity in each time window. Use the <strong>Trend</strong> badge (&uarr;/&darr;) to see if current 30-day intensity is &gt;15% above or below the prior 30-day window.</li>
+              <li>Blank or zero values mean no GDELT events were mapped to that district in that window — not confirmed absence of crime.</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         TAB 6 — ABOUT
+    ══════════════════════════════ -->
+    <div class="tab-pane fade" id="tabAbout" role="tabpanel">
+
+      <!-- Hero -->
+      <div class="about-hero mb-4">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Lambang_Dewan_Ekonomi_Nasional_Republik_Indonesia_%282025%29.svg/250px-Lambang_Dewan_Ekonomi_Nasional_Republik_Indonesia_%282025%29.svg.png"
+             alt="DEN Logo" style="height:80px;width:auto;flex-shrink:0;">
+        <div>
+          <div class="title">DEN Crime Monitoring Dashboard</div>
+          <div class="divider"></div>
+          <div class="org">Dewan Ekonomi Nasional &mdash; Republik Indonesia</div>
+          <div class="meta">Economic Intelligence Unit &middot; Version 1.0 &middot; Data: GDELT v2 via Google BigQuery</div>
+        </div>
+      </div>
+
+      <div class="row g-4">
+
+        <!-- Motivation -->
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="fw-bold mb-3" style="color:var(--red);">&#9632; Motivation</h5>
+              <p>
+                Economic and financial distress are well-established drivers of crime. When households face
+                sustained income shocks, rising unemployment, or acute cost-of-living pressures, the incidence
+                of property crime, violent crime, and social unrest tends to rise. This relationship has been
+                documented across both developed and developing economies and operates through multiple channels:
+                reduced legitimate earning opportunities, breakdown of community cohesion, and heightened
+                desperation among vulnerable populations.
+              </p>
+              <p>
+                Conversely, a measurable and sustained increase in crime &mdash; particularly in regions with
+                limited safety nets &mdash; can serve as a leading or coincident indicator that a population
+                is under serious financial stress, even before that distress is captured by lagging official
+                statistics such as poverty rates or household consumption surveys.
+              </p>
+              <p>
+                The <strong>Dewan Ekonomi Nasional (DEN)</strong>, as the National Economic Council of Indonesia,
+                advises the President on strategic economic policy and is mandated to monitor economic conditions
+                and welfare across the archipelago. Crime trend monitoring falls squarely within that mandate:
+                it provides DEN analysts with a timely, granular, and independent signal of financial distress
+                at the district and provincial level &mdash; a signal that complements traditional macroeconomic
+                indicators and may surface emerging vulnerabilities earlier.
+              </p>
+              <p class="mb-0">
+                This dashboard operationalises that monitoring function using near-real-time global event data
+                from GDELT, delivering weekly crime intensity trends across all 34 provinces and 500+ districts
+                of Indonesia.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Methodology -->
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="fw-bold mb-4" style="color:var(--red);">&#9632; Methodology</h5>
+
+              <div class="row g-4">
+
+                <!-- GDELT -->
+                <div class="col-md-6">
+                  <div class="method-block" style="--accent:var(--red);">
+                    <h6 class="fw-bold mb-2">1. Data Source: GDELT</h6>
+                    <p class="small mb-2">
+                      The <strong>Global Database of Events, Language and Tone (GDELT)</strong> is the world's
+                      largest open event dataset. Created by Kalev Leetaru (Georgetown University) and Philip
+                      Schrodt, it monitors print, broadcast and web news media in over 100 languages across
+                      every country, updated every 15 minutes.
+                    </p>
+                    <p class="small mb-2">
+                      GDELT automatically identifies real-world events &mdash; protests, violence, diplomacy,
+                      arrests &mdash; from news articles using machine learning and natural language processing,
+                      then codes them using the <strong>CAMEO</strong> (Conflict and Mediation Event
+                      Observations) taxonomy of over 300 event types. Each event is georeferenced to a location
+                      and linked to the number of news sources that reported it.
+                    </p>
+                    <p class="small mb-0">
+                      This dashboard queries the <strong>GDELT v2 Events table</strong>
+                      (<code>gdelt-bq.gdeltv2.events</code>) hosted as a public dataset on
+                      <strong>Google BigQuery</strong>, covering records from 2024 onwards.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Event selection -->
+                <div class="col-md-6">
+                  <div class="method-block" style="--accent:var(--blue);">
+                    <h6 class="fw-bold mb-2">2. Event Selection</h6>
+                    <p class="small mb-2">
+                      Events are filtered to <strong>Indonesia only</strong>
+                      (<code>ActionGeo_CountryCode = 'ID'</code>) and to CAMEO codes associated with
+                      crime-proximate behaviour:
+                    </p>
+                    <table class="table table-sm table-borderless small mb-2" style="font-size:.78rem;">
+                      <thead><tr><th>Code prefix</th><th>Category</th></tr></thead>
+                      <tbody>
+                        <tr><td><code>14x</code></td><td>Protests &amp; demonstrations</td></tr>
+                        <tr><td><code>18x</code></td><td>Assault &amp; physical violence</td></tr>
+                        <tr><td><code>19x</code></td><td>Mass violence &amp; coercion</td></tr>
+                      </tbody>
+                    </table>
+                    <p class="small mb-0">
+                      A 24-month rolling window is maintained, pulling approximately 66,000 raw event records
+                      before cleaning. After deduplication, roughly 27,000 unique geo-coded events remain,
+                      spanning 34 provinces and 383 districts.
+                    </p>
+                    <p class="small mb-0" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+                      <strong>&#8635; Data updates:</strong> The pipeline is re-run periodically to pull the latest
+                      GDELT events. The dashboard header shows the date range of the current dataset; check it
+                      to confirm how recent the data are.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Intensity index -->
+                <div class="col-md-6">
+                  <div class="method-block" style="--accent:#16a085;">
+                    <h6 class="fw-bold mb-2">3. Crime Intensity Index</h6>
+                    <p class="small mb-2">
+                      A raw event count treats a single-source local incident the same as a nationally
+                      covered atrocity. To correct for this, each event is weighted by two GDELT fields:
+                    </p>
+                    <div class="text-center my-2 p-2 rounded" style="background:#fff;font-family:monospace;font-size:.85rem;">
+                      intensity = NumMentions &times; |GoldsteinScale|
+                    </div>
+                    <ul class="small mb-0 ps-3">
+                      <li><strong>NumMentions</strong> — how many news sources worldwide reported the event; a proxy for significance and scale.</li>
+                      <li><strong>GoldsteinScale</strong> — a theoretical conflict severity score from &minus;10 (most destabilising) to +10 (most cooperative). Crime-proximate events cluster near &minus;10.</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- Administrative boundaries -->
+                <div class="col-md-6">
+                  <div class="method-block" style="--accent:#7c3aed;">
+                    <h6 class="fw-bold mb-2">4. Administrative Boundaries</h6>
+                    <p class="small mb-2">
+                      District-level attribution is performed via <strong>spatial join</strong> using the
+                      official <strong>BPS (Badan Pusat Statistik)</strong> administrative boundary shapefile
+                      at Admin Level 2 (kabupaten/kota), distributed by OCHA's Humanitarian Data Exchange
+                      (HDX, accessed 2024).
+                    </p>
+                    <p class="small mb-0">
+                      The boundary file covers <strong>522 kabupaten/kota</strong> across 34 provinces in
+                      WGS84 (EPSG:4326) projection &mdash; the same coordinate system used by GDELT's
+                      <code>ActionGeo_Lat/Long</code> fields, requiring no reprojection. Each GDELT event
+                      point is assigned to the containing district polygon; approximately 2.5% of points
+                      falling in coastal or offshore positions are retained with a null district assignment.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Data pipeline -->
+                <div class="col-md-6">
+                  <div class="method-block" style="--accent:#ea580c;">
+                    <h6 class="fw-bold mb-2">5. Data Pipeline</h6>
+                    <ol class="small mb-0 ps-3">
+                      <li class="mb-1"><strong>BigQuery pull</strong> — SQL query against <code>gdelt-bq.gdeltv2.events</code> using a service account key; results downloaded as a Parquet file.</li>
+                      <li class="mb-1"><strong>Cleaning</strong> — null coordinate removal, bounding box validation, deduplication (same date/code/location, keep highest NumSources).</li>
+                      <li class="mb-1"><strong>Spatial join</strong> — GeoPandas point-in-polygon against BPS adm2 boundaries to assign province and district.</li>
+                      <li class="mb-1"><strong>Weekly aggregation</strong> — Monday-anchored ISO weeks; intensity, event count, and mean Goldstein computed per week &times; province.</li>
+                      <li class="mb-0"><strong>Static export</strong> — JSON files generated by Python and served as a fully static HTML dashboard (Chart.js + Leaflet.js), deployable to GitHub Pages.</li>
+                    </ol>
+                  </div>
+                </div>
+
+                <!-- Limitations -->
+                <div class="col-md-6">
+                  <div class="method-block" style="--accent:#d97706;background:#fffbeb;">
+                    <h6 class="fw-bold mb-2">6. Limitations &amp; Caveats</h6>
+                    <ul class="small mb-0 ps-3">
+                      <li class="mb-1"><strong>Media bias</strong> — GDELT measures news coverage, not actual crime incidence. Events in high-media-density areas (Jakarta, Java) will appear more intense than equivalent events in low-coverage regions.</li>
+                      <li class="mb-1"><strong>Under-reporting</strong> — Rural, remote, and small-scale incidents that do not reach regional or national news outlets will be absent from the data.</li>
+                      <li class="mb-1"><strong>CAMEO coding accuracy</strong> — Event classification is automated; some records may be miscoded or represent non-criminal conflict.</li>
+                      <li class="mb-1"><strong>Temporal lag</strong> — The pipeline runs on demand; data reflect the last export date, not real-time.</li>
+                      <li class="mb-0"><strong>Indicator, not measure</strong> — This dashboard is a monitoring and early-warning tool. Findings should be validated against official BPS crime statistics and field intelligence before informing policy decisions.</li>
+                    </ul>
+                  </div>
+                </div>
+
+              </div><!-- /row -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Technical specs footer -->
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="fw-bold mb-3" style="color:var(--red);">&#9632; Technical Stack</h6>
+              <div class="row g-2 small">
+                <div class="col-sm-4"><span class="fw-semibold">Data source</span><br>GDELT v2 via Google BigQuery</div>
+                <div class="col-sm-4"><span class="fw-semibold">Boundaries</span><br>BPS / OCHA HDX Admin Level 2 (2020)</div>
+                <div class="col-sm-4"><span class="fw-semibold">Coverage</span><br>24 months rolling, ~27,000 events</div>
+                <div class="col-sm-4 mt-2"><span class="fw-semibold">Backend processing</span><br>Python 3.13 &middot; pandas &middot; geopandas &middot; pysal</div>
+                <div class="col-sm-4 mt-2"><span class="fw-semibold">Frontend</span><br>Chart.js 4.4 &middot; Leaflet 1.9 &middot; Bootstrap 5.3</div>
+                <div class="col-sm-4 mt-2"><span class="fw-semibold">Hosting</span><br>Static HTML &mdash; GitHub Pages compatible</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="col-12">
+          <div class="card" style="border:1px solid #fde68a;background:#fffbeb;">
+            <div class="card-body">
+              <h6 class="fw-bold mb-3" style="color:#d97706;">&#9888; Disclaimer &amp; Known Limitations</h6>
+
+              <p class="small mb-3">
+                <strong>This dashboard is in active development.</strong> Data, calculations, and visualisations
+                may contain errors or inaccuracies. It should not be used as the sole basis for policy decisions
+                without independent verification against official sources.
+              </p>
+
+              <p class="small fw-semibold mb-1">Methodological weaknesses to bear in mind:</p>
+              <ul class="small mb-3 ps-3">
+                <li class="mb-1"><strong>Media coverage, not official crime records</strong> — Data are derived from news articles indexed by GDELT, not from police reports, BPS crime statistics, or court records. Events that receive no media coverage are entirely absent.</li>
+                <li class="mb-1"><strong>Java / urban bias</strong> — Regions with higher journalist density and internet penetration (Jakarta, Surabaya, Bandung) will appear more active regardless of actual crime rates, systematically understating conditions in remote provinces.</li>
+                <li class="mb-1"><strong>Automated event coding</strong> — CAMEO classification is performed by machine-learning models. Miscoding, duplicate events from multiple articles about the same incident (partially mitigated by deduplication), and misgeolocation are inherent risks.</li>
+                <li class="mb-1"><strong>Spatial precision</strong> — GDELT geolocates events to named places; precision varies from district level to province level. Approximately 2.5% of events cannot be matched to a district polygon and are excluded from district-level charts.</li>
+                <li class="mb-1"><strong>No causal inference</strong> — Correlation between crime intensity and economic distress is well-supported in the literature, but this dashboard cannot establish causation for any specific event or trend.</li>
+                <li class="mb-0"><strong>Static data snapshot</strong> — The dashboard reflects data as of the last pipeline run. It is not updated in real time; the data range shown in the header indicates the latest available date.</li>
+              </ul>
+
+              <p class="small mb-0">
+                Found an error or inconsistency? Please contact
+                <a href="mailto:arief.yusuf@gmail.com" style="color:var(--red);">arief.yusuf@gmail.com</a>
+                with the specific chart, figure, or district name and a brief description of the issue.
+                Feedback is appreciated and will be used to improve the dashboard.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /row -->
+    </div><!-- /tabAbout -->
+
+  </div><!-- /tab-content -->
+</div><!-- /main -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   DATA LOADING
+══════════════════════════════════════════════════════════════ */
+const FILES = [
+  'data/meta.json',
+  'data/national.json',
+  'data/weeks.json',
+  'data/province_datasets.json',
+  'data/top25_count.json',
+  'data/top25_intensity.json',
+  'data/map_lookup.json',
+  'data/district_trend_count.json',
+  'data/district_trend_intens.json',
+  'data/district_table.json',
+];
+
+Promise.all(FILES.map(f => fetch(f).then(r => r.json())))
+  .then(([meta, national, weeks, provDs, top25Count, top25Intens,
+          mapLookup, distTrendCount, distTrendIntens, distTable]) => {
+
+    populateKpis(meta);
+    renderNational(national, weeks, meta.grandMean);
+    renderProvince(weeks, provDs);
+    renderTop25Bar('chartTop25Count',  top25Count,  'event_count',     'events');
+    renderTop25Bar('chartTop25Intens', top25Intens, 'total_intensity', 'intensity');
+    renderSmallMultiples('gridDistCount',  distTrendCount,  weeks, 'Events');
+    renderSmallMultiples('gridDistIntens', distTrendIntens, weeks, 'Intensity');
+    setupMap(mapLookup, meta);
+    setupTable(distTable);
+
+    document.getElementById('loader').style.display = 'none';
+  })
+  .catch(err => {
+    document.getElementById('loader').innerHTML =
+      `<div class="text-danger fw-bold text-center">
+         Failed to load data.<br><small>${err}</small>
+       </div>
+       <p class="text-muted small mt-2">
+         Serve with: <code>python -m http.server 8080</code> — do not open index.html directly.
+       </p>`;
+  });
+
+/* ══════════════════════════════════════════════════════════════
+   KPIs
+══════════════════════════════════════════════════════════════ */
+function populateKpis(meta) {
+  const n = v => Number(v).toLocaleString();
+  document.getElementById('kTotalEvents').textContent = n(meta.totalEvents);
+  document.getElementById('kTotalIntens').textContent = n(meta.totalIntensity);
+  document.getElementById('kWeeklyMean').textContent  = n(meta.grandMean);
+  document.getElementById('kDateRange').textContent   = `${meta.weekCount} wks`;
+  document.getElementById('kDateLbl').textContent     = `${fmtMon(meta.dateMin)} – ${fmtMon(meta.dateMax)}`;
+  document.getElementById('kGeo').textContent         = `${meta.provinceCount} / ${meta.districtCount}`;
+}
+function fmtMon(iso) {
+  return new Date(iso).toLocaleDateString('en-US', { month:'short', year:'2-digit' });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SHARED CHART HELPERS
+══════════════════════════════════════════════════════════════ */
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+Chart.defaults.font.size   = 11;
+
+function monthTicks(weeks) {
+  return (_, idx) => {
+    const d = new Date(weeks[idx]);
+    return d.getDate() <= 7
+      ? d.toLocaleDateString('en-US', { month:'short', year:'2-digit' })
+      : null;
+  };
+}
+const xAxis = weeks => ({
+  ticks: { callback: monthTicks(weeks), maxRotation:40, autoSkip:false, font:{size:10} },
+  grid:  { display: false },
+});
+
+function redScale(n) {
+  if (n <= 1) return ['rgba(245,48,3,0.85)'];
+  return Array.from({ length:n }, (_, i) => {
+    const t = 1 - i / (n - 1);
+    return `rgba(245,48,3,${(0.28 + 0.67*t).toFixed(2)})`;
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CHART 1 — National trend
+══════════════════════════════════════════════════════════════ */
+function renderNational(national, weeks, grandMean) {
+  new Chart(document.getElementById('chartNational'), {
+    data: {
+      labels: weeks,
+      datasets: [
+        { type:'bar',  label:'Weekly intensity',
+          data: national.map(d => d.intensity),
+          backgroundColor:'#cccccc', borderWidth:0, order:3 },
+        { type:'line', label:'4-week rolling avg',
+          data: national.map(d => d.rolling4),
+          borderColor:'#F53003', backgroundColor:'transparent',
+          borderWidth:2.5, pointRadius:0, tension:0.35, order:1 },
+        { type:'line', label:`24-month mean (${Number(grandMean).toLocaleString()})`,
+          data: weeks.map(() => grandMean),
+          borderColor:'#2c3e50', backgroundColor:'transparent',
+          borderWidth:1.5, borderDash:[6,4], pointRadius:0, order:2 },
+      ],
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      scales: {
+        x: xAxis(weeks),
+        y: { ticks:{ callback: v => v.toLocaleString() }, grid:{ color:'#eeeeee' },
+             title:{ display:true, text:'Total Intensity (NumMentions × |GoldsteinScale|)', font:{size:10} } },
+      },
+      plugins: {
+        legend:{ position:'top', labels:{ boxWidth:14, padding:10 } },
+        tooltip:{ callbacks:{ label: ctx =>
+          `${ctx.dataset.label}: ${Number(ctx.raw).toLocaleString(undefined,{maximumFractionDigits:1})}` }},
+      },
+    },
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CHART 2 — Province trend
+══════════════════════════════════════════════════════════════ */
+function renderProvince(weeks, provDs) {
+  new Chart(document.getElementById('chartProvince'), {
+    type:'line',
+    data:{ labels:weeks, datasets:provDs },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      scales:{
+        x: xAxis(weeks),
+        y:{ ticks:{ callback: v => v.toLocaleString() }, grid:{ color:'#eeeeee' } },
+      },
+      plugins:{
+        legend:{ position:'right', labels:{ boxWidth:12, padding:8, font:{size:10} } },
+        tooltip:{ callbacks:{ label: ctx =>
+          `${ctx.dataset.label}: ${Number(ctx.raw).toLocaleString(undefined,{maximumFractionDigits:0})}` }},
+      },
+    },
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CHARTS 3 & 4 — Top 25 horizontal bars
+══════════════════════════════════════════════════════════════ */
+function renderTop25Bar(canvasId, data, valueKey, unit) {
+  new Chart(document.getElementById(canvasId), {
+    type:'bar',
+    data:{
+      labels: data.map(d => d.district_name),
+      datasets:[{ data: data.map(d => parseFloat(d[valueKey])),
+                  backgroundColor: redScale(data.length), borderWidth:0 }],
+    },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      scales:{
+        x:{ ticks:{ callback: v => v.toLocaleString(), font:{size:10} }, grid:{ color:'#eeeeee' } },
+        y:{ ticks:{ font:{size:10} }, grid:{ display:false } },
+      },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{ callbacks:{
+          label:      ctx => ` ${Number(ctx.raw).toLocaleString(undefined,{maximumFractionDigits:0})} ${unit}`,
+          afterLabel: ctx => ` Province: ${data[ctx.dataIndex].province_name}`,
+        }},
+      },
+    },
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CHARTS 5 & 6 — District trend lines (custom legend)
+══════════════════════════════════════════════════════════════ */
+function rolling4(arr) {
+  return arr.map((_, j) => {
+    const s = arr.slice(Math.max(0, j-3), j+1);
+    return s.reduce((a,b) => a+b, 0) / s.length;
+  });
+}
+
+function renderSmallMultiples(gridId, datasets, weeks, yLabel) {
+  const grid = document.getElementById(gridId);
+  grid.innerHTML = '';
+
+  datasets.forEach(ds => {
+    const cell = document.createElement('div');
+    cell.className = 'dist-cell';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'dist-label';
+    lbl.innerHTML =
+      `<span class="dot" style="background:${ds.borderColor}"></span>` +
+      `<span title="${ds.label}">${ds.label}</span>`;
+    cell.appendChild(lbl);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'dist-canvas-wrap';
+    const canvas = document.createElement('canvas');
+    wrap.appendChild(canvas);
+    cell.appendChild(wrap);
+    grid.appendChild(cell);
+
+    const raw  = ds.data;
+    const roll = rolling4(raw);
+
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: weeks,
+        datasets: [
+          { data: raw,  borderColor: ds.borderColor+'55', backgroundColor:'transparent',
+            borderWidth:1, pointRadius:0, tension:0.3 },
+          { data: roll, borderColor: ds.borderColor,      backgroundColor: ds.borderColor+'18',
+            fill:true, borderWidth:1.8, pointRadius:0, tension:0.4 },
+        ],
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false, animation:false,
+        scales: {
+          x: {
+            ticks: {
+              maxRotation:0, autoSkip:true, maxTicksLimit:4, font:{size:8}, color:'#aaa',
+              callback: (_, idx) => {
+                const d = weeks[idx]; if (!d) return '';
+                const dt = new Date(d);
+                return dt.toLocaleDateString('en',{month:'short',year:'2-digit'});
+              },
+            },
+            grid:{ display:false }, border:{ display:false },
+          },
+          y: {
+            min:0,
+            ticks:{ maxTicksLimit:3, font:{size:8}, color:'#aaa',
+                    callback: v => v > 0 ? v.toLocaleString() : '' },
+            grid:{ color:'#f0f0f0' }, border:{ display:false },
+          },
+        },
+        plugins: {
+          legend:{ display:false },
+          tooltip:{
+            callbacks:{
+              title: ctx => `${ds.label} · ${ctx[0].label}`,
+              label: ctx => `${yLabel}: ${Number(ctx.raw).toLocaleString(undefined,{maximumFractionDigits:0})}`,
+            },
+          },
+        },
+      },
+    });
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MAP
+══════════════════════════════════════════════════════════════ */
+const PALETTE = ['#fff0ed','#ffd0c4','#ffaa91','#ff7a52','#F53003','#b82200'];
+let leafletMap = null, geojsonLayer = null, currentMode = 'curr', _mapLookup = {};
+
+function qBreaks(mode) {
+  const vals = Object.values(_mapLookup).map(d => d[mode]||0)
+    .filter(v => v > 0).sort((a,b) => a-b);
+  if (!vals.length) return [0,10,50,150,400,1000];
+  const q = p => vals[Math.max(0, Math.floor(p * vals.length)-1)];
+  return [0, q(.2), q(.4), q(.6), q(.8), Infinity];
+}
+function iColor(val, breaks) {
+  if (!val || val <= 0) return '#f0f0f0';
+  for (let i = breaks.length-2; i >= 0; i--)
+    if (val >= breaks[i]) return PALETTE[Math.min(i, PALETTE.length-1)];
+  return PALETTE[0];
+}
+function cColor(val) {
+  if (!val || Math.abs(val) < 1) return '#f5f5f5';
+  const t = Math.min(Math.abs(val)/600, 1);
+  return val > 0
+    ? `rgba(245,48,3,${(.2+.78*t).toFixed(2)})`
+    : `rgba(37,99,235,${(.2+.78*t).toFixed(2)})`;
+}
+function fStyle(feature) {
+  const d = _mapLookup[feature.properties.pcode] || {};
+  const fill = currentMode === 'change'
+    ? cColor(d.change||0)
+    : iColor(d[currentMode]||0, qBreaks(currentMode));
+  return { fillColor:fill, weight:.6, color:'#999', fillOpacity:.78 };
+}
+function updateMapLegend() {
+  const el = document.getElementById('mapLegend');
+  if (currentMode === 'change') {
+    el.innerHTML =
+      '<b>Change:</b>' +
+      ' <span class="lbox" style="background:rgba(41,128,185,.8)"></span>Decreased' +
+      ' &nbsp;<span class="lbox" style="background:#f5f5f5;border:1px solid #ccc"></span>Flat' +
+      ' &nbsp;<span class="lbox" style="background:rgba(245,48,3,.8)"></span>Increased' +
+      ' — hover for values';
+  } else {
+    const b = qBreaks(currentMode);
+    const lbl = currentMode === 'curr' ? 'Current (last 30d)' : 'Previous (30–60d)';
+    const fmt = v => isFinite(v) ? v.toLocaleString(undefined,{maximumFractionDigits:0}) : '+';
+    el.innerHTML = `<b>${lbl}:</b> ` +
+      PALETTE.map((c,i) => `<span class="lbox" style="background:${c}"></span>${fmt(b[i])}–${fmt(b[i+1])}`).join(' &nbsp;') +
+      ' — hover for details';
+  }
+}
+function initMap(meta) {
+  leafletMap = L.map('map').setView([-2.5,118], 5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'&copy; OpenStreetMap contributors', opacity:.35
+  }).addTo(leafletMap);
+
+  fetch('data/indonesia_adm2.geojson').then(r => r.json()).then(gj => {
+    geojsonLayer = L.geoJSON(gj, {
+      style: fStyle,
+      onEachFeature(feature, layer) {
+        const p = feature.properties;
+        layer.on('mouseover', function() {
+          const d = _mapLookup[p.pcode] || {};
+          const chg = d.change||0;
+          const chgStr = (chg>0?'+':'') + chg.toLocaleString(undefined,{maximumFractionDigits:0});
+          const chgCol = chg>0?'#F53003':chg<0?'#2563eb':'#706f6c';
+          layer.bindTooltip(
+            `<b>${p.district}</b><br><span style="color:#888">${p.province}</span>` +
+            `<hr style="margin:4px 0;border-color:#eee">` +
+            `Current (30d): <b>${(d.curr||0).toLocaleString(undefined,{maximumFractionDigits:0})}</b> <span style="color:#888">(${d.currEv||0} ev.)</span><br>` +
+            `Previous (30–60d): <b>${(d.prev||0).toLocaleString(undefined,{maximumFractionDigits:0})}</b> <span style="color:#888">(${d.prevEv||0} ev.)</span><br>` +
+            `Change: <b style="color:${chgCol}">${chgStr}</b>`,
+            {sticky:true, opacity:.95}
+          ).openTooltip();
+          layer.setStyle({weight:2, color:'#333'});
+        });
+        layer.on('mouseout', () => { geojsonLayer.resetStyle(layer); layer.closeTooltip(); });
+      },
+    }).addTo(leafletMap);
+    updateMapLegend();
+  });
+}
+function setupMap(mapLookup, meta) {
+  _mapLookup = mapLookup;
+  document.getElementById('periodLabel').innerHTML =
+    `Current: <b>${meta.mapCurrStart} &ndash; ${meta.mapCurrEnd}</b>` +
+    ` &bull; Previous: <b>${meta.mapPrevStart} &ndash; ${meta.mapPrevEnd}</b>`;
+  document.querySelectorAll('input[name="period"]').forEach(r =>
+    r.addEventListener('change', e => {
+      currentMode = e.target.value;
+      if (geojsonLayer) geojsonLayer.setStyle(fStyle);
+      updateMapLegend();
+    })
+  );
+  document.getElementById('mapTabBtn').addEventListener('shown.bs.tab', () => {
+    leafletMap ? leafletMap.invalidateSize() : initMap(meta);
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DISTRICT TABLE
+══════════════════════════════════════════════════════════════ */
+let _tableData = [];
+let _sortCol   = 'total_intensity';
+let _sortDir   = 'desc';
+let _search    = '';
+
+function trendBadge(t) {
+  if (t === 'up')   return '<span class="trend-up">&#9650; Up</span>';
+  if (t === 'down') return '<span class="trend-down">&#9660; Down</span>';
+  return '<span class="trend-flat">&#8212; Flat</span>';
+}
+
+function renderTableRows() {
+  const q = _search.toLowerCase();
+  let data = _tableData.filter(d =>
+    !q || d.district_name.toLowerCase().includes(q) || d.province_name.toLowerCase().includes(q)
+  );
+  data.sort((a, b) => {
+    if (_sortCol === 'rank') return 0;
+    const va = a[_sortCol], vb = b[_sortCol];
+    if (typeof va === 'string') return _sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _sortDir === 'asc' ? va - vb : vb - va;
+  });
+
+  const fmt  = (v, d=0) => Number(v).toLocaleString(undefined, {maximumFractionDigits:d});
+  const body = document.getElementById('tblBody');
+  body.innerHTML = data.map((d, i) => `
+    <tr>
+      <td class="text-center text-muted">${i+1}</td>
+      <td>
+        <span class="fw-500">${d.district_name}</span><br>
+        <small class="text-muted">${d.province_name}</small>
+      </td>
+      <td class="text-end">${fmt(d.event_count)}</td>
+      <td class="text-end">${fmt(d.total_intensity)}</td>
+      <td class="text-end">
+        ${fmt(d.curr_intensity)}<br>
+        <small class="text-muted">${d.curr_events} ev.</small>
+      </td>
+      <td class="text-end">
+        ${fmt(d.prev_intensity)}<br>
+        <small class="text-muted">${d.prev_events} ev.</small>
+      </td>
+      <td class="text-end">
+        ${fmt(d.week_intensity)}<br>
+        <small class="text-muted">${d.week_events} ev.</small>
+      </td>
+      <td class="text-center">${trendBadge(d.trend)}</td>
+    </tr>`).join('');
+
+  document.getElementById('tblCount').textContent =
+    `${data.length.toLocaleString()} of ${_tableData.length.toLocaleString()} districts`;
+}
+
+function setupTable(data) {
+  _tableData = data;
+  renderTableRows();
+
+  // Sort on header click
+  document.querySelectorAll('#distTable thead th').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      if (col === 'rank') return;
+      if (_sortCol === col) {
+        _sortDir = _sortDir === 'desc' ? 'asc' : 'desc';
+      } else {
+        _sortCol = col;
+        _sortDir = 'desc';
+      }
+      document.querySelectorAll('#distTable thead th').forEach(h => {
+        h.querySelector('.sort-icon')?.remove();
+      });
+      const icon = document.createElement('span');
+      icon.className = 'sort-icon';
+      icon.textContent = _sortDir === 'desc' ? ' ▼' : ' ▲';
+      th.appendChild(icon);
+      renderTableRows();
+    });
+  });
+
+  // Search
+  document.getElementById('searchBox').addEventListener('input', e => {
+    _search = e.target.value;
+    renderTableRows();
+  });
+
+  // Lazy render: ensure table re-renders when tab is shown
+  document.getElementById('tblTabBtn').addEventListener('shown.bs.tab', renderTableRows);
+}
+</script>
+</body>
+</html>
