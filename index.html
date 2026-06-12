@@ -389,6 +389,13 @@
 
       <div class="card">
         <div class="card-body">
+          <div class="card-title" style="color:var(--dark);">All Events — Combined Index (14x + 18x + 19x) &nbsp;<span class="fw-normal text-muted" style="font-size:.74rem;">Top 20 by count</span></div>
+          <div id="gridCountAll" class="dist-grid"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
           <div class="card-title" style="color:#2563eb;">Protests &amp; Demonstrations — Code 14x &nbsp;<span class="fw-normal text-muted" style="font-size:.74rem;">Top 20 by count</span></div>
           <div id="gridCount14" class="dist-grid"></div>
         </div>
@@ -411,7 +418,7 @@
       <div class="metric-note">
         <div class="mn-title">&#8505; How to read these panels</div>
         <ul>
-          <li>Each panel = one district. <strong>Bold line</strong> = 4-week rolling average. Thin line = raw weekly count. Each code section is ranked independently by its own total count.</li>
+          <li>Each panel = one district. <strong>Bold line</strong> = 4-week rolling average. Thin line = raw weekly count. The <strong>Combined</strong> section ranks all event types together; each code section is ranked independently.</li>
           <li><strong>Event count</strong> measures distinct GDELT news events, <em>not</em> police-recorded incidents. A quiet week may mean few incidents <em>or</em> low media coverage.</li>
         </ul>
       </div>
@@ -421,6 +428,13 @@
          TAB 3 — DISTRICT INTENSITY TREND
     ══════════════════════════════ -->
     <div class="tab-pane fade" id="tabIntensTrend" role="tabpanel">
+
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title" style="color:var(--dark);">All Events — Combined Index (14x + 18x + 19x) &nbsp;<span class="fw-normal text-muted" style="font-size:.74rem;">Top 20 by intensity</span></div>
+          <div id="gridIntensAll" class="dist-grid"></div>
+        </div>
+      </div>
 
       <div class="card">
         <div class="card-body">
@@ -446,7 +460,7 @@
       <div class="metric-note">
         <div class="mn-title">&#8505; How to read these panels</div>
         <ul>
-          <li>Each panel = one district. <strong>Bold line</strong> = 4-week rolling average of intensity. Thin line = raw weekly value. Each code section is ranked independently by its own total intensity.</li>
+          <li>Each panel = one district. <strong>Bold line</strong> = 4-week rolling average of intensity. Thin line = raw weekly value. The <strong>Combined</strong> section ranks all event types together; each code section is ranked independently.</li>
           <li><strong>Intensity = &sum;(NumMentions &times; |GoldsteinScale|)</strong>. A single heavily-reported event can spike a chart. Not per capita.</li>
         </ul>
       </div>
@@ -463,13 +477,25 @@
               <div class="card-title mb-0">District Conflict &amp; Violence Intensity Map</div>
               <div class="period-label mt-1" id="periodLabel"></div>
             </div>
-            <div class="btn-group btn-group-sm" role="group">
-              <input type="radio" class="btn-check" name="period" id="pCurr"   value="curr"   checked>
-              <label class="btn btn-outline-danger"    for="pCurr">Current (last 30d)</label>
-              <input type="radio" class="btn-check" name="period" id="pPrev"   value="prev">
-              <label class="btn btn-outline-secondary" for="pPrev">Previous (30–60d ago)</label>
-              <input type="radio" class="btn-check" name="period" id="pChange" value="change">
-              <label class="btn btn-outline-primary"   for="pChange">Change</label>
+            <div class="d-flex flex-column gap-2 align-items-end">
+              <div class="btn-group btn-group-sm" role="group">
+                <input type="radio" class="btn-check" name="mapComp" id="cAll" value="all" checked>
+                <label class="btn btn-outline-dark"      for="cAll">All</label>
+                <input type="radio" class="btn-check" name="mapComp" id="c14"  value="14">
+                <label class="btn btn-outline-primary"   for="c14">Protests 14x</label>
+                <input type="radio" class="btn-check" name="mapComp" id="c18"  value="18">
+                <label class="btn btn-outline-danger"    for="c18">Violence 18x</label>
+                <input type="radio" class="btn-check" name="mapComp" id="c19"  value="19">
+                <label class="btn" style="border-color:#7c3aed;color:#7c3aed;" for="c19">Coercion 19x</label>
+              </div>
+              <div class="btn-group btn-group-sm" role="group">
+                <input type="radio" class="btn-check" name="period" id="pCurr"   value="curr"   checked>
+                <label class="btn btn-outline-danger"    for="pCurr">Current (last 30d)</label>
+                <input type="radio" class="btn-check" name="period" id="pPrev"   value="prev">
+                <label class="btn btn-outline-secondary" for="pPrev">Previous (30–60d ago)</label>
+                <input type="radio" class="btn-check" name="period" id="pChange" value="change">
+                <label class="btn btn-outline-primary"   for="pChange">Change</label>
+              </div>
             </div>
           </div>
           <div id="map"></div>
@@ -478,6 +504,7 @@
             <div class="mn-title">&#8505; What the map shows</div>
             <ul>
               <li><strong>Colour intensity</strong> = total GDELT event intensity (NumMentions &times; |GoldsteinScale|) for the selected period. Darker = higher media-weighted severity. <strong>Not per capita or per km&sup2;.</strong></li>
+              <li><strong>Component</strong>: <em>All</em> = combined 14x+18x+19x index; <em>Protests 14x</em>, <em>Violence 18x</em>, <em>Coercion 19x</em> = individual event families.</li>
               <li><strong>Current / Previous</strong>: 30-day windows. <strong>Change</strong>: red = increased, blue = decreased versus the prior 30-day window. Hover any district for exact values.</li>
               <li>Districts with no GDELT events in a period appear light grey — this may mean no incidents <em>or</em> no media coverage reaching GDELT.</li>
             </ul>
@@ -792,6 +819,9 @@ const FILES = [
   'data/top25_count.json',
   'data/top25_intensity.json',
   'data/map_lookup.json',
+  'data/map_lookup_14.json',
+  'data/map_lookup_18.json',
+  'data/map_lookup_19.json',
   'data/district_trend_count.json',
   'data/district_trend_intens.json',
   'data/district_table.json',
@@ -802,7 +832,8 @@ const FILES = [
 
 Promise.all(FILES.map(f => fetch(f).then(r => r.json())))
   .then(([meta, national, weeks, provDs, top25Count, top25Intens,
-          mapLookup, distTrendCount, distTrendIntens, distTable,
+          mapLookup, mapLookup14, mapLookup18, mapLookup19,
+          distTrendCount, distTrendIntens, distTable,
           byCode, distCountByCode, distIntensByCode]) => {
 
     populateKpis(meta);
@@ -812,11 +843,13 @@ Promise.all(FILES.map(f => fetch(f).then(r => r.json())))
     renderTop25Bar('chartTop25Intens', top25Intens.slice(0,10), 'total_intensity', 'intensity');
     renderCodeCharts(byCode, weeks);
 
+    renderSmallMultiples('gridCountAll',  distTrendCount.slice(0,20),  weeks, 'Events');
+    renderSmallMultiples('gridIntensAll', distTrendIntens.slice(0,20), weeks, 'Intensity');
     for (const code of ['14','18','19']) {
       renderSmallMultiples(`gridCount${code}`,  distCountByCode[code]  || [], weeks, 'Events');
       renderSmallMultiples(`gridIntens${code}`, distIntensByCode[code] || [], weeks, 'Intensity');
     }
-    setupMap(mapLookup, meta);
+    setupMap({all: mapLookup, '14': mapLookup14, '18': mapLookup18, '19': mapLookup19}, meta);
     setupTable(distTable);
 
     document.getElementById('loader').style.display = 'none';
@@ -1094,7 +1127,7 @@ function renderSmallMultiples(gridId, datasets, weeks, yLabel) {
    MAP
 ══════════════════════════════════════════════════════════════ */
 const PALETTE = ['#fff0ed','#ffd0c4','#ffaa91','#ff7a52','#F53003','#b82200'];
-let leafletMap = null, geojsonLayer = null, currentMode = 'curr', _mapLookup = {};
+let leafletMap = null, geojsonLayer = null, currentMode = 'curr', _mapLookup = {}, _mapLookups = {};
 
 function qBreaks(mode) {
   const vals = Object.values(_mapLookup).map(d => d[mode]||0)
@@ -1173,14 +1206,22 @@ function initMap(meta) {
     updateMapLegend();
   });
 }
-function setupMap(mapLookup, meta) {
-  _mapLookup = mapLookup;
+function setupMap(mapLookups, meta) {
+  _mapLookups = mapLookups;
+  _mapLookup  = mapLookups.all;
   document.getElementById('periodLabel').innerHTML =
     `Current: <b>${meta.mapCurrStart} &ndash; ${meta.mapCurrEnd}</b>` +
     ` &bull; Previous: <b>${meta.mapPrevStart} &ndash; ${meta.mapPrevEnd}</b>`;
   document.querySelectorAll('input[name="period"]').forEach(r =>
     r.addEventListener('change', e => {
       currentMode = e.target.value;
+      if (geojsonLayer) geojsonLayer.setStyle(fStyle);
+      updateMapLegend();
+    })
+  );
+  document.querySelectorAll('input[name="mapComp"]').forEach(r =>
+    r.addEventListener('change', e => {
+      _mapLookup = _mapLookups[e.target.value];
       if (geojsonLayer) geojsonLayer.setStyle(fStyle);
       updateMapLegend();
     })
